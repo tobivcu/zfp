@@ -9,6 +9,7 @@ extern "C" {
 };
 
 #include "gtest/gtest.h"
+#include "utils/predicates.h"
 
 #define MIN_TOTAL_ELEMENTS 1000000
 #define DIMS 1
@@ -50,7 +51,7 @@ protected:
 
 TEST_F(Array1dTest, when_generateRandomData_then_checksumMatches)
 {
-  EXPECT_EQ(CHECKSUM_ORIGINAL_DATA_ARRAY, hashArray((uint64*)inputDataArr, inputDataTotalLen, 1));
+  EXPECT_PRED_FORMAT2(ExpectEqPrintHexPred, CHECKSUM_ORIGINAL_DATA_ARRAY, hashArray((uint64*)inputDataArr, inputDataTotalLen, 1));
 }
 
 INSTANTIATE_TEST_CASE_P(instatiationName, Array1dTest, ::testing::Values(0, 1, 2));
@@ -61,12 +62,12 @@ TEST_P(Array1dTest, given_dataset_when_set_then_underlyingBitstreamChecksumMatch
 
   uint64 expectedChecksum = getExpectedBitstreamChecksum();
   uint64 checksum = hashBitstream((uint64*)arr.compressed_data(), arr.compressed_size());
-  EXPECT_NE(expectedChecksum, checksum);
+  EXPECT_PRED_FORMAT2(ExpectNeqPrintHexPred, expectedChecksum, checksum);
 
   arr.set(inputDataArr);
 
   checksum = hashBitstream((uint64*)arr.compressed_data(), arr.compressed_size());
-  EXPECT_EQ(expectedChecksum, checksum);
+  EXPECT_PRED_FORMAT2(ExpectEqPrintHexPred, expectedChecksum, checksum);
 }
 
 TEST_P(Array1dTest, given_setArray1d_when_get_then_decompressedValsReturned)
@@ -79,7 +80,7 @@ TEST_P(Array1dTest, given_setArray1d_when_get_then_decompressedValsReturned)
 
   uint64 expectedChecksum = getExpectedDecompressedChecksum();
   uint64 checksum = hashArray((uint64*)decompressedArr, inputDataTotalLen, 1);
-  EXPECT_EQ(expectedChecksum, checksum);
+  EXPECT_PRED_FORMAT2(ExpectEqPrintHexPred, expectedChecksum, checksum);
 
   delete[] decompressedArr;
 }
