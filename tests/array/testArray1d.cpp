@@ -14,6 +14,8 @@ extern "C" {
 #define MIN_TOTAL_ELEMENTS 1000000
 #define DIMS 1
 
+const double VAL = 4;
+
 size_t inputDataSideLen, inputDataTotalLen;
 double* inputDataArr;
 
@@ -91,6 +93,107 @@ TEST_P(Array1dTest, given_setArray1d_when_get_then_decompressedValsReturned)
   EXPECT_PRED_FORMAT2(ExpectEqPrintHexPred, expectedChecksum, checksum);
 
   delete[] decompressedArr;
+}
+
+TEST_F(Array1dTest, when_setEntryWithEquals_then_entrySetInCacheOnly)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+
+  // compressed_data() automatically flushes cache, so call it before setting entries
+  uchar* bitstreamPtr = arr.compressed_data();
+  size_t bitstreamLen = arr.compressed_size();
+  uint64 initializedChecksum = hashBitstream((uint64*)bitstreamPtr, bitstreamLen);
+
+  arr(0) = 4;
+  uint64 checksum = hashBitstream((uint64*)bitstreamPtr, bitstreamLen);
+
+  EXPECT_PRED_FORMAT2(ExpectEqPrintHexPred, initializedChecksum, checksum);
+}
+
+TEST_F(Array1dTest, given_setEntryWithEquals_when_flushCache_then_entryWrittenToBitstream)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+
+  uint64 initializedChecksum = hashBitstream((uint64*)arr.compressed_data(), arr.compressed_size());
+
+  arr(0) = 4;
+  uint64 checksum = hashBitstream((uint64*)arr.compressed_data(), arr.compressed_size());
+
+  EXPECT_PRED_FORMAT2(ExpectNeqPrintHexPred, initializedChecksum, checksum);
+}
+
+TEST_F(Array1dTest, when_getIndex_then_refReturned)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+
+  arr(0) = VAL;
+
+  EXPECT_EQ(VAL, arr(0));
+}
+
+TEST_F(Array1dTest, when_setEntryWithAnotherEntryValue_then_valueSet)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+
+  arr(1) = arr(0);
+
+  EXPECT_EQ(VAL, arr(1));
+}
+
+TEST_F(Array1dTest, when_plusEqualsOnEntry_then_valueSet)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+  arr(1) = VAL;
+
+  arr(1) += arr(0);
+
+  EXPECT_EQ(2 * VAL, arr(1));
+}
+
+TEST_F(Array1dTest, when_minusEqualsOnEntry_then_valueSet)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+  arr(1) = VAL;
+
+  arr(1) -= arr(0);
+
+  EXPECT_EQ(0, arr(1));
+}
+
+TEST_F(Array1dTest, when_timesEqualsOnEntry_then_valueSet)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+  arr(1) = VAL;
+
+  arr(1) *= arr(0);
+
+  EXPECT_EQ(VAL * VAL, arr(1));
+}
+
+TEST_F(Array1dTest, when_divideEqualsOnEntry_then_valueSet)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+  arr(1) = VAL;
+
+  arr(1) /= arr(0);
+
+  EXPECT_EQ(1, arr(1));
+}
+
+TEST_F(Array1dTest, when_swapTwoEntries_then_valuesSwapped)
+{
+  array1d arr(8, ZFP_RATE_PARAM_BITS);
+  arr(0) = VAL;
+
+  swap(arr(0), arr(1));
+
+  EXPECT_EQ(0, arr(0));
+  EXPECT_EQ(VAL, arr(1));
 }
 
 int main(int argc, char* argv[]) {
